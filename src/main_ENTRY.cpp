@@ -147,9 +147,6 @@ int main() {
   // Rigid body for dynamics
   dBodyID sphere = dBodyCreate(world);
 
-  // in raylib it's <X,Y,Z>  with Y being the UP axis, and Z in and out
-
-  // in ODE it's <X,Y,Z>  with Z being the UP axis
   
   dBodySetPosition(sphere, 0.0f, starting_height, 0.0f); //starting_height
 

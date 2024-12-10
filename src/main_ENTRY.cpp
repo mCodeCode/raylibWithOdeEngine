@@ -72,11 +72,11 @@ int main() {
   //---------------------------------------------
   //---------------------------------------------
   //ODE PHYSICS ENGINE CODE
-  const dReal density = 1.0;
-  const dReal radius = 0.3;
+  const dReal density = 3.0;
+  const dReal sphereRadius = 0.3;
   const double restitution = 0.9;
   const double damping = 0.1;
-  const dReal starting_height = 10.0;
+  const dReal starting_height = 3.0;
   const dReal gravity_y = -9.81;
   const std::string name = {"sphere1"};
 
@@ -125,10 +125,14 @@ int main() {
 
    */
 
+
+  // Initialize ODE, create the world, and create the collision space
+  // This must be done first.
   dInitODE2(0);
 
   dWorldID world = dWorldCreate();
   dWorldSetGravity(world, 0.0, gravity_y, 0.0);
+  // dWorldSetGravity(world, 0.0, 0.0, 0.0);
 
   dSpaceID space = dSimpleSpaceCreate(0);
   dJointGroupID collision_contact_group = dJointGroupCreate(0);
@@ -142,15 +146,20 @@ int main() {
 
   // Rigid body for dynamics
   dBodyID sphere = dBodyCreate(world);
-  dBodySetPosition(sphere, 0.0, starting_height, 0.0);
+
+  // in raylib it's <X,Y,Z>  with Y being the UP axis, and Z in and out
+
+  // in ODE it's <X,Y,Z>  with Z being the UP axis
+  
+  dBodySetPosition(sphere, 0.0f, starting_height, 0.0f); //starting_height
 
   // Mass
   dMass sphere_mass;
-  dMassSetSphere(&sphere_mass, density, radius);
+  dMassSetSphere(&sphere_mass, density, sphereRadius);
   dBodySetMass(sphere, &sphere_mass);
 
   // Geometry for collisions
-  dGeomID sphere_geom = dCreateSphere(space, radius);
+  dGeomID sphere_geom = dCreateSphere(space, sphereRadius);
   dGeomSetBody(sphere_geom, sphere);
 
   //
@@ -159,56 +168,105 @@ int main() {
 
   dGeomID ground_geom = dCreatePlane(space, 0, 1, 0, 0);
 
-
-  //
-  // Simulate the world for some amount of time
-  //
-
-  constexpr dReal TIME_STOP = 10;
-  constexpr dReal TIME_STEP = 0.001;
-  constexpr dReal OUTPUT_STEP = 0.05;
-
-  std::cout << "Time \"Height (R=" << restitution << ")\"\n";
-  std::cout << 0 << " " << starting_height << std::endl;
-
-  dReal next_output_time = OUTPUT_STEP;
-  for (dReal time = 0.0; time < TIME_STOP + TIME_STEP/2.0; time += TIME_STEP) {
-
-    dSpaceCollide(space, &collision_data, &handle_collisions);
-    dWorldStep(world, static_cast<dReal>(TIME_STEP));
-    dJointGroupEmpty(collision_contact_group);
-
-    if (time > next_output_time) {
-      const auto sphere_position = dBodyGetPosition(sphere);
-      std::cout << time << " " << sphere_position[1] << std::endl;
-      next_output_time += OUTPUT_STEP;
-    }
-  }
-
-  //
-  // Cleanup
-  //
-
-  // TODO:AJC other destroy
-  dSpaceDestroy(space);
-  dWorldDestroy(world);
-  dCloseODE();
-
   //---------------------------------------------
   //---------------------------------------------
   //---------------------------------------------
   //---------------------------------------------
   //RAYLIB CODE
-  // const int screenWidth = 800;
-  // const int screenHeight = 600;
-  // InitWindow(screenWidth, screenHeight, "Raylib basic window");
-  // SetTargetFPS(60);
-  // while (!WindowShouldClose()) {
-  //   BeginDrawing();
-  //   ClearBackground(RAYWHITE);
-  //   DrawText("It works!", 20, 20, 20, BLACK);
-  //   EndDrawing();
-  // }
-  // CloseWindow();
+   // Initialization
+    //--------------------------------------------------------------------------------------
+    const int screenWidth = 1200;
+    const int screenHeight = 700;
+
+    InitWindow(screenWidth, screenHeight, "world camera and falling sphere with ODE engine");
+
+    // Define the camera to look into our 3d world
+    Camera camera = { 0 };
+    camera.position = (Vector3){ 10.0f, 10.0f, 10.0f }; // Camera position
+    camera.target = (Vector3){ 0.0f, 1.0f, 0.0f };      // Camera looking at point
+    camera.up = (Vector3){ 0.0f, 0.5f, 0.0f };          // Camera up vector (rotation towards target)
+    camera.fovy = 45.0f;                                // Camera field-of-view Y
+    camera.projection = CAMERA_PERSPECTIVE;             // Camera projection type
+
+    DisableCursor();                    // Limit cursor to relative movement inside the window
+
+    SetTargetFPS(60);                   // Set our game to run at 60 frames-per-second
+    //--------------------------------------------------------------------------------------
+
+    // Main game loop QQQ
+    while (!WindowShouldClose())        // Detect window close button or ESC key
+    {
+        // Update QQQ
+        //----------------------------------------------------------------------------------
+        UpdateCamera(&camera, CAMERA_THIRD_PERSON);
+
+        //
+        // Simulate the world for some amount of time
+        //
+
+        constexpr dReal TIME_STEP = 0.01;
+
+        dSpaceCollide(space, &collision_data, &handle_collisions);
+        dWorldStep(world, static_cast<dReal>(TIME_STEP));
+        dJointGroupEmpty(collision_contact_group);
+
+        const auto sphere_position = dBodyGetPosition(sphere);
+        std::cout << time << " ODE X axis --- raylib X axis " << sphere_position[0] << std::endl;
+        std::cout << time << " ODE Y axis --- raylib Y axis " << sphere_position[1] << std::endl;
+        std::cout << time << " ODE Z axis --- raylib Z axis " << sphere_position[2] << std::endl;
+        std::cout << time << " ODE ? axis --- raylib ? axis " << sphere_position[3] << std::endl;
+
+
+        // Draw QQQ
+        //----------------------------------------------------------------------------------
+        BeginDrawing();
+
+            ClearBackground(RAYWHITE);
+
+            BeginMode3D(camera);
+
+                //DrawSphereWires(Vector3 centerPos, float radius, int rings, int slices, Color color);
+                //draw falling sphere with raylib, use ODE math
+                DrawSphereWires((Vector3){sphere_position[0], sphere_position[1], sphere_position[2]}, sphereRadius, 16, 16, LIME);
+
+                //test sphere for screen reference axis
+                DrawSphereWires((Vector3){0.0f, 0.0f, 0.0f}, 0.2f, 16, 16, RED);
+
+                // DrawGrid(int slices, float spacing)  for center of screen reference
+                DrawGrid(20, 0.5f);
+
+                //this is the actual floor
+                // DrawPlane(Vector3 centerPos, Vector2 size, Color color);
+                //Vector2 size in px? meters??
+                DrawPlane((Vector3){0.0f, 0.0f, 0.0f}, (Vector2){50, 50}, GOLD);
+
+            EndMode3D();
+
+            // DrawText("Enemy: 100 / 100", (int)cubeScreenPosition.x - MeasureText("Enemy: 100/100", 20)/2, (int)cubeScreenPosition.y, 20, BLACK);
+            
+            // DrawText(TextFormat("Cube position in screen space coordinates: [%i, %i]", (int)cubeScreenPosition.x, (int)cubeScreenPosition.y), 10, 10, 20, LIME);
+            // DrawText("Text 2d should be always on top of the cube", 10, 40, 20, GRAY);
+
+        EndDrawing();
+        //----------------------------------------------------------------------------------
+    }
+
+
+
+
+
+    // De-Initialization
+    //--------------------------------------------------------------------------------------
+    //closes the ODE data
+    dSpaceDestroy(space);
+    dWorldDestroy(world);
+    dCloseODE();
+
+
+    // Close window and OpenGL context (raylib)
+    CloseWindow();        
+
+
+    //--------------------------------------------------------------------------------------
   return 0;
 }

@@ -1,5 +1,8 @@
 # raylibWithOdeEngine
-basic template to use raylib rendering engine along with the ode physics engine, there is no other example like this on the web
+basic template to use raylib rendering engine along with the ode physics engine, there is no other example like this on the web, only tested on windows, and it's using visual studio code instead of visual studio like the other examples
+or build methods/tutorials for windows
+
+the file contains an example of a bouncing ball that bounces on the floor
 
 # this is for windows
 since that is the os i use,
@@ -53,4 +56,15 @@ when the exe is created, to run it, you need to put the libwinpthread-1.dll into
 you can avoid this issue probably recompiling correctly the whole repo but im lazy and this is enough for me
 
 
-# to run, open the exe file (the libwinpthread-1.dll must be in the same folder as the .exe)
+# to run, open the exe file 
+(the libwinpthread-1.dll must be in the same folder as the .exe)
+
+
+# update
+after building run the runAfterBuild.bat file, 
+this file will : 
+ * take the .exe from the build folder
+   and then move it to the root dir (where the libwinpthread-1.dll is),
+   
+ * then it will delete the build folder
+ * and finally it will execute the .exe file

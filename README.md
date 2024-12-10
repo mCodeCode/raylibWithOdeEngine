@@ -7,9 +7,14 @@ i don't know if this will compile in linux,
 maybe i will create a version for that if need it
 
 
-# how to build
+# what you need before compiling
 
-for the ode engine:
+you need to have installed mysys2 for windows, and updated with the g++ tools (how to update is on the same mysys2 page in the installation part)
+you need to install ninja there (on mysys2)
+you need to install cmake there (on mysys2)
+
+
+# how to build
 
 (note, when building, link statically to avoid dll dependencies)
 (add the static flags for the compiler in the cmakelist.txt)
